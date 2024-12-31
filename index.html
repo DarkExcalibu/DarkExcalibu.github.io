@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>随机歌词示例</title>
+  <title>随机歌词示例（外部数据源）</title>
   <style>
     /* 页面全屏黑色背景、内容居中 */
     html, body {
@@ -13,90 +13,90 @@
       background-color: #000;
       color: #fff;
       overflow: hidden;
-      cursor: pointer; /* 鼠标呈手型提示可点击 */
+      cursor: pointer; /* 鼠标呈手型，提示可点击 */
     }
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative; /* 用于定位左下角歌名 */
+      position: relative; /* 用于定位右下角歌名 */
     }
 
-    /* 容纳歌词的容器，居中大字体 */
+    /* 大字体显示歌词，居中 */
     #lyricContainer {
       text-align: center;
-      font-size: 48px;    /* 可根据需要调整 */
+      font-size: 90px;    /* 加大字号 */
       line-height: 1.5;   /* 行距 */
-      padding: 0 20px;    /* 预留左右边距，避免长句贴边 */
-      max-width: 80%;     /* 控制最大宽度，避免过长 */
-      word-wrap: break-word;
+      padding: 0 30px;    /* 预留左右边距，避免长句贴边 */
+      max-width: 80%;
+      word-wrap: break-word; 
+      white-space: pre-wrap; /* 保留换行格式 */
     }
 
-    /* 歌名显示在页面左下角，小字 */
+    /* 歌名显示在页面右下角，小字 */
     #songName {
       position: absolute;
-      left: 20px;
+      right: 15px;
       bottom: 20px;
-      font-size: 16px;  /* 根据需求调整大小 */
+      font-size: 18px;  /* 可根据需求调整大小 */
       color: #fff;
-      opacity: 0.8;     /* 略微透明，看起来更柔和些 */
+      opacity: 0.8;     /* 略微透明，看起来更柔和 */
     }
   </style>
 </head>
 <body>
-  <div id="lyricContainer">点击屏幕切换到随机歌词</div>
+  <div id="lyricContainer">正在加载歌词数据…</div>
   <div id="songName"></div>
 
   <script>
-    // 准备一个数组，每个元素包含 lyric（一句完整歌词）和 song（歌曲名）
-    const lyrics = [
-      {
-        lyric: "天青色等烟雨，而我在等你",
-        song: "《青花瓷》周杰伦"
-      },
-      {
-        lyric: "当我和世界不一样，那就让我不一样",
-        song: "《倔强》五月天"
-      },
-      {
-        lyric: "如果你愿意一层一层一层地剥开我的心",
-        song: "《洋葱》杨宗纬"
-      },
-      {
-        lyric: "我想就这样牵着你的手不放开",
-        song: "《晴天》周杰伦"
-      },
-      {
-        lyric: "你是我的眼，带我领略四季的变换",
-        song: "《你是我的眼》萧煌奇"
-      },
-      {
-        lyric: "爱很简单，只要你点头",
-        song: "《爱很简单》陶喆"
-      },
-      {
-        lyric: "我知道你都知道，我爱你没保留",
-        song: "《告白气球》周杰伦"
-      }
-    ];
-
-    const lyricContainer = document.getElementById('lyricContainer');
-    const songName = document.getElementById('songName');
-
-    function generateLyric() {
-      const randomIndex = Math.floor(Math.random() * lyrics.length);
-      const { lyric, song } = lyrics[randomIndex];
-      lyricContainer.textContent = lyric;
-      songName.textContent = song;
+    /**
+     * 将歌词里的逗号、句号、问号、叹号等中文标点加换行符
+     * 也可自行根据需要增加或修改标点
+     */
+    function formatLyric(str) {
+      return str.replace(/([，。？！])/g, '$1<br>');
     }
 
-    // 初始时显示随机歌词
-    generateLyric();
+    let lyricsData = []; // 存放从外部 JSON 加载到的歌词数组
 
-    // 点击页面切换歌词
+    // 随机生成歌词
+    function generateLyric() {
+      if (lyricsData.length === 0) {
+        // 若还没加载到数据或数据为空
+        document.getElementById('lyricContainer').textContent = '歌词数据暂不可用';
+        document.getElementById('songName').textContent = '';
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * lyricsData.length);
+      const { lyric, song } = lyricsData[randomIndex];
+
+      // 显示处理后的歌词
+      document.getElementById('lyricContainer').innerHTML = formatLyric(lyric);
+      // 显示歌曲名
+      document.getElementById('songName').textContent = song;
+    }
+
+    // 点击页面时切换下一条随机歌词
     document.body.addEventListener('click', generateLyric);
+
+    // 从外部 JSON 文件读取歌词数据
+    fetch('lyrics.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // data 形如 { lyrics: [...] }
+        lyricsData = data.lyrics || [];
+        // 加载成功后，立即调用一次生成随机歌词
+        generateLyric();
+      })
+      .catch(error => {
+        console.error('加载外部数据出错:', error);
+        document.getElementById('lyricContainer').textContent = '加载外部数据出错';
+      });
   </script>
 </body>
 </html>
-
-
